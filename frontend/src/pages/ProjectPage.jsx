@@ -137,13 +137,13 @@ export default function ProjectPage() {
             </div>
           )}
 
-          {/* Output Video */}
-          {project.status === 'completed' && project.outputVideoPath && (
-            <div>
-              <h2 className="text-xl font-semibold text-white mb-4">Output Video</h2>
-              <button className="px-6 py-3 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600">
-                Download Video
-              </button>
+          {/* Completion Message */}
+          {project.status === 'completed' && (
+            <div className="p-4 bg-green-900/20 border border-green-500 rounded-lg">
+              <h2 className="text-xl font-semibold text-green-400 mb-2">Analysis Complete!</h2>
+              <p className="text-gray-300">
+                Your video has been analyzed with AI. Review the analysis results and reference videos above.
+              </p>
             </div>
           )}
         </div>
@@ -156,8 +156,6 @@ function StatusBadge({ status }) {
   const colors = {
     draft: 'bg-gray-600',
     analyzing: 'bg-yellow-600',
-    processing: 'bg-blue-600',
-    rendering: 'bg-purple-600',
     completed: 'bg-green-600',
     failed: 'bg-red-600'
   };

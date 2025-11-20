@@ -159,8 +159,6 @@ function StatusBadge({ status }) {
   const colors = {
     draft: 'bg-gray-600',
     analyzing: 'bg-yellow-600',
-    processing: 'bg-blue-600',
-    rendering: 'bg-purple-600',
     completed: 'bg-green-600',
     failed: 'bg-red-600'
   };

@@ -1,6 +1,6 @@
 /**
  * Job Queue Service
- * Bull queue for video processing
+ * Bull queue for video analysis (no rendering)
  */
 
 import Queue from 'bull';
@@ -8,7 +8,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Create queues
+// Create analysis queue
 export const videoAnalysisQueue = new Queue('video-analysis', {
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
@@ -25,22 +25,6 @@ export const videoAnalysisQueue = new Queue('video-analysis', {
   }
 });
 
-export const videoRenderQueue = new Queue('video-render', {
-  redis: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: process.env.REDIS_PORT || 6379
-  },
-  defaultJobOptions: {
-    attempts: 2,
-    backoff: {
-      type: 'exponential',
-      delay: 5000
-    },
-    removeOnComplete: 50,
-    removeOnFail: false
-  }
-});
-
 // Add job to analysis queue
 export async function addVideoAnalysisJob(data) {
   const job = await videoAnalysisQueue.add(data, {
@@ -52,22 +36,9 @@ export async function addVideoAnalysisJob(data) {
   return job;
 }
 
-// Add job to render queue
-export async function addVideoRenderJob(data) {
-  const job = await videoRenderQueue.add(data, {
-    priority: data.priority || 5,
-    timeout: 30 * 60 * 1000 // 30 minutes timeout
-  });
-
-  console.log(`🎬 Video render job added: ${job.id}`);
-
-  return job;
-}
-
 // Get job status
-export async function getJobStatus(jobId, queueName = 'video-analysis') {
-  const queue = queueName === 'video-analysis' ? videoAnalysisQueue : videoRenderQueue;
-  const job = await queue.getJob(jobId);
+export async function getJobStatus(jobId) {
+  const job = await videoAnalysisQueue.getJob(jobId);
 
   if (!job) {
     return null;
@@ -93,14 +64,6 @@ videoAnalysisQueue.on('failed', (job, err) => {
   console.error(`❌ Analysis job ${job.id} failed:`, err.message);
 });
 
-videoRenderQueue.on('completed', (job, result) => {
-  console.log(`✅ Render job ${job.id} completed`);
-});
+console.log('✅ Video analysis queue initialized');
 
-videoRenderQueue.on('failed', (job, err) => {
-  console.error(`❌ Render job ${job.id} failed:`, err.message);
-});
-
-console.log('✅ Job queues initialized');
-
-export default { videoAnalysisQueue, videoRenderQueue };
+export default { videoAnalysisQueue };

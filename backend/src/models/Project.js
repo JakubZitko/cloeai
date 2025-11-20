@@ -30,14 +30,10 @@ const Project = sequelize.define('Project', {
     allowNull: true
   },
   status: {
-    type: DataTypes.ENUM('draft', 'analyzing', 'processing', 'rendering', 'completed', 'failed'),
+    type: DataTypes.ENUM('draft', 'analyzing', 'completed', 'failed'),
     defaultValue: 'draft'
   },
   originalVideoPath: {
-    type: DataTypes.STRING,
-    allowNull: true
-  },
-  outputVideoPath: {
     type: DataTypes.STRING,
     allowNull: true
   },
@@ -47,10 +43,6 @@ const Project = sequelize.define('Project', {
   },
   references: {
     type: DataTypes.JSONB, // Stores reference video URLs
-    allowNull: true
-  },
-  aeProjectPath: {
-    type: DataTypes.STRING,
     allowNull: true
   },
   progress: {
