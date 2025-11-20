@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>$(DEVELOPMENT_LANGUAGE)</string>
+
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+
+    <key>CFBundleIdentifier</key>
+    <string>com.cloe.ai.assistant</string>
+
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+
+    <key>CFBundleName</key>
+    <string>Cloe</string>
+
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+
+    <key>CFBundleVersion</key>
+    <string>1</string>
+
+    <key>LSMinimumSystemVersion</key>
+    <string>12.0</string>
+
+    <key>LSUIElement</key>
+    <true/>
+
+    <key>NSHumanReadableCopyright</key>
+    <string>Copyright © 2024 Cloe AI. All rights reserved.</string>
+
+    <!-- Permission Usage Descriptions -->
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Cloe needs microphone access to accept voice commands and transcribe meetings.</string>
+
+    <key>NSCalendarsUsageDescription</key>
+    <string>Cloe needs calendar access to create events, check your schedule, and manage reminders.</string>
+
+    <key>NSContactsUsageDescription</key>
+    <string>Cloe needs contacts access to help you email and message people.</string>
+
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Cloe needs automation permissions to control other applications and perform tasks on your behalf.</string>
+
+    <key>NSSystemAdministrationUsageDescription</key>
+    <string>Cloe needs administrative access to monitor system events and automate workflows.</string>
+
+    <!-- App Transport Security -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <false/>
+    </dict>
+
+    <!-- Application Category -->
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.productivity</string>
+
+    <!-- Main Storyboard -->
+    <key>NSMainStoryboardFile</key>
+    <string></string>
+
+    <!-- Principal Class -->
+    <key>NSPrincipalClass</key>
+    <string>NSApplication</string>
+
+    <!-- High Resolution Capable -->
+    <key>NSHighResolutionCapable</key>
+    <true/>
+
+    <!-- Support Dark Mode -->
+    <key>NSRequiresAquaSystemAppearance</key>
+    <false/>
+</dict>
+</plist>

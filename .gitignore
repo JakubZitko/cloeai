@@ -1,0 +1,67 @@
+# Xcode
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcworkspace/contents.xcworkspacedata
+*.xccheckout
+*.moved-aside
+*.xcuserstate
+*.xcscmblueprint
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# macOS
+.DS_Store
+*.swp
+*~.nib
+
+# Build artifacts
+*.app
+*.dSYM.zip
+*.dSYM
+
+# Dependencies
+Carthage/Build/
+
+# CocoaPods
+Pods/
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Code coverage
+*.gcda
+*.gcno
+
+# API Keys (IMPORTANT: Never commit these!)
+.env
+*.pem
+*.p12
+config/secrets.json
+
+# App data
+*.db
+*.db-shm
+*.db-wal
+
+# User-specific files
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+
+# Temporary files
+*.tmp
+*.temp
+
+# Logs
+*.log
