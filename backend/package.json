@@ -1,0 +1,35 @@
+{
+  "name": "cloe-video-backend",
+  "version": "1.0.0",
+  "description": "Backend API for Cloe SaaS Video Creator",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "worker": "node src/workers/render-worker.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "passport-apple": "^2.0.2",
+    "express-session": "^1.17.3",
+    "pg": "^8.11.3",
+    "sequelize": "^6.35.2",
+    "bull": "^4.12.0",
+    "redis": "^4.6.11",
+    "multer": "^1.4.5-lts.1",
+    "axios": "^1.6.2",
+    "dotenv": "^16.3.1",
+    "bcrypt": "^5.1.1",
+    "jsonwebtoken": "^9.0.2",
+    "cors": "^2.8.5",
+    "uuid": "^9.0.1",
+    "openai": "^4.20.1",
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
