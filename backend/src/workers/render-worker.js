@@ -7,7 +7,7 @@ import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import fs from 'fs/promises';
-import Project from '../models/User.js';
+import Project from '../models/Project.js';
 import { videoAnalysisQueue } from '../services/job-queue.js';
 import { connectDatabase } from '../config/database.js';
 import dotenv from 'dotenv';
