@@ -43,9 +43,9 @@ class SpatialMemory {
 
     private func openDatabase() {
         if sqlite3_open(dbPath, &db) != SQLITE_OK {
-            print("❌ Failed to open database")
+            print("[ERROR] Failed to open database")
         } else {
-            print("✅ Memory database opened: \(dbPath)")
+            print("[OK] Memory database opened: \(dbPath)")
         }
     }
 
@@ -122,7 +122,7 @@ class SpatialMemory {
     // MARK: - Public Methods
 
     func load() {
-        print("📚 Loading spatial memory...")
+        print("[DATA] Loading spatial memory...")
         loadEntities()
         loadWorkflows()
         loadPreferences()
@@ -152,7 +152,7 @@ class SpatialMemory {
             sqlite3_bind_text(statement, 4, "{}", -1, nil)
 
             if sqlite3_step(statement) == SQLITE_DONE {
-                print("✅ Entity saved: \(name)")
+                print("[OK] Entity saved: \(name)")
             }
         }
         sqlite3_finalize(statement)
@@ -206,7 +206,7 @@ class SpatialMemory {
             sqlite3_bind_text(statement, 3, (stepsString! as NSString).utf8String, -1, nil)
 
             if sqlite3_step(statement) == SQLITE_DONE {
-                print("✅ Workflow saved: \(pattern)")
+                print("[OK] Workflow saved: \(pattern)")
             }
         }
         sqlite3_finalize(statement)
@@ -287,7 +287,7 @@ class SpatialMemory {
         }
         sqlite3_finalize(statement)
 
-        print("📚 Loaded \(entities.count) entities")
+        print("[DATA] Loaded \(entities.count) entities")
     }
 
     private func loadWorkflows() {
@@ -305,7 +305,7 @@ class SpatialMemory {
         }
         sqlite3_finalize(statement)
 
-        print("📚 Loaded \(workflows.count) workflows")
+        print("[DATA] Loaded \(workflows.count) workflows")
     }
 
     private func loadPreferences() {

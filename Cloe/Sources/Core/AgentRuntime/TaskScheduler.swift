@@ -74,7 +74,7 @@ class TaskScheduler {
         taskQueue.append(task)
         saveTaskQueue()
 
-        print("📝 Task added: \(task.title)")
+        print("[NOTE] Task added: \(task.title)")
 
         // If autonomous mode is active, process immediately
         if isAutonomousModeActive && task.canRunAutonomously {
@@ -107,7 +107,7 @@ class TaskScheduler {
     // MARK: - Autonomous Mode
 
     func start() {
-        print("🤖 Task Scheduler started")
+        print("[BOT] Task Scheduler started")
 
         // Start activity monitoring
         startActivityMonitoring()
@@ -165,7 +165,7 @@ class TaskScheduler {
     }
 
     private func startAutonomousMode() {
-        print("🌙 Autonomous mode activated")
+        print("[NIGHT] Autonomous mode activated")
         isAutonomousModeActive = true
 
         // Notify via menu bar icon
@@ -187,7 +187,7 @@ class TaskScheduler {
     private func stopAutonomousMode() {
         guard isAutonomousModeActive else { return }
 
-        print("☀️ Autonomous mode deactivated")
+        print("[DAY] Autonomous mode deactivated")
         isAutonomousModeActive = false
 
         autonomousTimer?.invalidate()
@@ -202,7 +202,7 @@ class TaskScheduler {
     private func processPendingTasks() async {
         let pendingTasks = getPendingTasks()
 
-        print("🔄 Processing \(pendingTasks.count) pending tasks")
+        print("[SYNC] Processing \(pendingTasks.count) pending tasks")
 
         for task in pendingTasks {
             // Check if task can be executed
@@ -215,20 +215,20 @@ class TaskScheduler {
     private func canExecuteTask(_ task: ScheduledTask) -> Bool {
         // Check if task can run autonomously
         guard task.canRunAutonomously else {
-            print("⏸️  Task requires user input: \(task.title)")
+            print("[PAUSE]️  Task requires user input: \(task.title)")
             return false
         }
 
         // Check smart timing rules
         if !checkSmartTiming(for: task) {
-            print("⏰ Task timing not appropriate: \(task.title)")
+            print("[TIME] Task timing not appropriate: \(task.title)")
             return false
         }
 
         // Check if scheduled time has passed
         if let scheduledTime = task.scheduledTime {
             guard Date() >= scheduledTime else {
-                print("⏳ Task not yet scheduled: \(task.title)")
+                print("[WAIT] Task not yet scheduled: \(task.title)")
                 return false
             }
         }
@@ -255,7 +255,7 @@ class TaskScheduler {
 
             // Don't send messages during no-message hours
             if hour >= noMessageStart || hour <= noMessageEnd {
-                print("🔕 Not sending messages during quiet hours")
+                print("[QUIET] Not sending messages during quiet hours")
                 return false
             }
 
@@ -264,7 +264,7 @@ class TaskScheduler {
                task.command.lowercased().contains("dad") ||
                task.command.lowercased().contains("family") {
                 if hour >= 21 || hour <= 8 {
-                    print("🔕 Not messaging family outside appropriate hours")
+                    print("[QUIET] Not messaging family outside appropriate hours")
                     return false
                 }
             }
@@ -274,7 +274,7 @@ class TaskScheduler {
     }
 
     private func processTask(_ task: ScheduledTask) async {
-        print("⚡ Processing task: \(task.title)")
+        print("[EXEC] Processing task: \(task.title)")
 
         // Update task status
         var updatedTask = task
@@ -302,7 +302,7 @@ class TaskScheduler {
                 completedAt: Date()
             )
 
-            print("✅ Task completed: \(task.title)")
+            print("[OK] Task completed: \(task.title)")
 
         } catch {
             // Mark as failed
@@ -313,7 +313,7 @@ class TaskScheduler {
                 completedAt: Date()
             )
 
-            print("❌ Task failed: \(task.title) - \(error)")
+            print("[ERROR] Task failed: \(task.title) - \(error)")
         }
 
         updatedTask.updatedAt = Date()
@@ -328,9 +328,9 @@ class TaskScheduler {
         do {
             let data = try Data(contentsOf: URL(fileURLWithPath: taskQueuePath))
             taskQueue = try JSONDecoder().decode([ScheduledTask].self, from: data)
-            print("📚 Loaded \(taskQueue.count) tasks from queue")
+            print("[DATA] Loaded \(taskQueue.count) tasks from queue")
         } catch {
-            print("❌ Failed to load task queue: \(error)")
+            print("[ERROR] Failed to load task queue: \(error)")
         }
     }
 
@@ -339,7 +339,7 @@ class TaskScheduler {
             let data = try JSONEncoder().encode(taskQueue)
             try data.write(to: URL(fileURLWithPath: taskQueuePath))
         } catch {
-            print("❌ Failed to save task queue: \(error)")
+            print("[ERROR] Failed to save task queue: \(error)")
         }
     }
 
@@ -353,12 +353,12 @@ class TaskScheduler {
 
         let pending = getPendingTasks()
 
-        var summary = "Good morning! 🌅\n\n"
+        var summary = "Good morning! Morning\n\n"
 
         if !completed.isEmpty {
             summary += "Overnight, I completed:\n"
             for task in completed.prefix(5) {
-                summary += "✅ \(task.title)\n"
+                summary += "[OK] \(task.title)\n"
             }
             summary += "\n"
         }
@@ -366,7 +366,7 @@ class TaskScheduler {
         if !pending.isEmpty {
             summary += "Waiting for your approval:\n"
             for task in pending.prefix(3) {
-                summary += "⏳ \(task.title)\n"
+                summary += "[WAIT] \(task.title)\n"
             }
         }
 

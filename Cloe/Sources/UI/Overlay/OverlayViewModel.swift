@@ -93,7 +93,7 @@ class OverlayViewModel: ObservableObject {
     }
 
     private func processInput(_ input: String) {
-        print("📝 Processing input: \(input)")
+        print("[NOTE] Processing input: \(input)")
 
         isProcessing = true
         currentResponse = nil
@@ -136,7 +136,7 @@ class OverlayViewModel: ObservableObject {
     }
 
     func executeAction(_ action: AgentAction) {
-        print("🎯 Executing action: \(action.title)")
+        print("[TARGET] Executing action: \(action.title)")
         action.handler()
     }
 

@@ -202,7 +202,7 @@ class NightWorker {
         // Check if it's already done
         if checkIfAlreadyDone(task) {
             mutableTask.status = .completed
-            print("✓ Task '\(task.description)' was already completed by user")
+            print("OK Task '\(task.description)' was already completed by user")
             return
         }
 
@@ -211,7 +211,7 @@ class NightWorker {
         if !timing.appropriate {
             mutableTask.scheduledFor = nextAppropriateTime(for: task)
             mutableTask.status = .scheduled
-            print("⏰ Task '\(task.description)' scheduled for \(mutableTask.scheduledFor!)")
+            print("[TIME] Task '\(task.description)' scheduled for \(mutableTask.scheduledFor!)")
         }
 
         pendingTasks.append(mutableTask)
@@ -266,7 +266,7 @@ class NightWorker {
         guard !isActive else { return }
         isActive = true
 
-        print("🌙 NightWorker: Starting night mode")
+        print("[NIGHT] NightWorker: Starting night mode")
 
         // Check every 30 minutes for tasks to complete
         nightTimer = Timer.scheduledTimer(withTimeInterval: 1800, repeats: true) { [weak self] _ in
@@ -282,7 +282,7 @@ class NightWorker {
         nightTimer?.invalidate()
         nightTimer = nil
 
-        print("☀️ NightWorker: Night mode ended")
+        print("[DAY] NightWorker: Night mode ended")
     }
 
     private func processNightTasks() {
@@ -304,7 +304,7 @@ class NightWorker {
                     await executeTask(task, at: index)
                 }
             } else if let reason = timing.reason {
-                print("⏸ Skipping '\(task.description)': \(reason)")
+                print("[PAUSE] Skipping '\(task.description)': \(reason)")
 
                 // Reschedule
                 pendingTasks[index].scheduledFor = nextAppropriateTime(for: task)
@@ -316,7 +316,7 @@ class NightWorker {
     }
 
     private func executeTask(_ task: CloeTask, at index: Int) async {
-        print("🔄 Executing: \(task.description)")
+        print("[SYNC] Executing: \(task.description)")
         pendingTasks[index].status = .inProgress
 
         var success = false
@@ -359,9 +359,9 @@ class NightWorker {
         savePendingTasks()
 
         if success {
-            print("✓ Completed: \(task.description)")
+            print("OK Completed: \(task.description)")
         } else {
-            print("✗ Failed: \(task.description)")
+            print("FAIL Failed: \(task.description)")
         }
     }
 
@@ -446,9 +446,70 @@ class NightWorker {
     }
 
     private func performOrganization(_ task: CloeTask) async -> Bool {
-        // Simplified: just log for now
-        print("Would organize: \(task.details)")
-        return true
+        guard let targetPath = task.details["path"] else {
+            print("[NightWorker] Organization task missing path")
+            return false
+        }
+
+        let url = URL(fileURLWithPath: targetPath)
+        let fileManager = FileManager.default
+
+        guard fileManager.fileExists(atPath: targetPath) else {
+            print("[NightWorker] Path does not exist: \(targetPath)")
+            return false
+        }
+
+        do {
+            // Get directory contents
+            let contents = try fileManager.contentsOfDirectory(at: url, includingPropertiesForKeys: [.contentTypeKey, .creationDateKey])
+
+            // Create organized folders
+            let categories: [String: [String]] = [
+                "Documents": ["pdf", "doc", "docx", "txt", "rtf", "pages", "odt"],
+                "Images": ["jpg", "jpeg", "png", "gif", "bmp", "tiff", "heic", "webp"],
+                "Videos": ["mp4", "mov", "avi", "mkv", "wmv", "flv", "webm"],
+                "Audio": ["mp3", "wav", "aac", "flac", "m4a", "ogg"],
+                "Archives": ["zip", "rar", "7z", "tar", "gz", "dmg"],
+                "Code": ["swift", "js", "py", "java", "cpp", "c", "h", "html", "css", "json", "xml"]
+            ]
+
+            var movedCount = 0
+
+            for file in contents {
+                let ext = file.pathExtension.lowercased()
+                var targetFolder: String?
+
+                for (folder, extensions) in categories {
+                    if extensions.contains(ext) {
+                        targetFolder = folder
+                        break
+                    }
+                }
+
+                if let folder = targetFolder {
+                    let destinationFolder = url.appendingPathComponent(folder)
+
+                    // Create folder if needed
+                    if !fileManager.fileExists(atPath: destinationFolder.path) {
+                        try fileManager.createDirectory(at: destinationFolder, withIntermediateDirectories: true)
+                    }
+
+                    // Move file
+                    let destination = destinationFolder.appendingPathComponent(file.lastPathComponent)
+                    if !fileManager.fileExists(atPath: destination.path) {
+                        try fileManager.moveItem(at: file, to: destination)
+                        movedCount += 1
+                    }
+                }
+            }
+
+            print("[NightWorker] Organized \(movedCount) files in \(targetPath)")
+            return movedCount > 0
+
+        } catch {
+            print("[NightWorker] Organization error: \(error)")
+            return false
+        }
     }
 
     private func performSendEmail(_ task: CloeTask) async -> Bool {
@@ -470,16 +531,110 @@ class NightWorker {
     }
 
     private func performSendMessage(_ task: CloeTask) async -> Bool {
-        // This would need to integrate with Messages.app
-        // For now, just show what we would do
-        print("Would send message to \(task.contactName ?? "unknown"): \(task.details["message"] ?? "")")
-        return false // Return false as we're not actually sending
+        guard let recipient = task.contactName ?? task.details["to"],
+              let message = task.details["message"] else {
+            print("[NightWorker] Message task missing recipient or message")
+            return false
+        }
+
+        // Use AppleScript to send via Messages.app
+        let escapedMessage = message.replacingOccurrences(of: "\"", with: "\\\"")
+        let escapedRecipient = recipient.replacingOccurrences(of: "\"", with: "\\\"")
+
+        let script = """
+        tell application "Messages"
+            set targetService to 1st account whose service type = iMessage
+            set targetBuddy to participant "\(escapedRecipient)" of targetService
+            send "\(escapedMessage)" to targetBuddy
+        end tell
+        """
+
+        var error: NSDictionary?
+        guard let scriptObject = NSAppleScript(source: script) else {
+            print("[NightWorker] Failed to create AppleScript for message")
+            return false
+        }
+
+        scriptObject.executeAndReturnError(&error)
+
+        if let error = error {
+            // Try alternative method using buddy by phone/email
+            let altScript = """
+            tell application "Messages"
+                send "\(escapedMessage)" to buddy "\(escapedRecipient)" of (service 1 whose service type is iMessage)
+            end tell
+            """
+
+            guard let altScriptObject = NSAppleScript(source: altScript) else {
+                print("[NightWorker] Message send failed: \(error)")
+                return false
+            }
+
+            var altError: NSDictionary?
+            altScriptObject.executeAndReturnError(&altError)
+
+            if let altError = altError {
+                print("[NightWorker] Message send failed: \(altError)")
+                return false
+            }
+        }
+
+        print("[NightWorker] Sent message to \(recipient)")
+        return true
     }
 
     private func performWorkTask(_ task: CloeTask) async -> Bool {
-        // This would use ActionExecutor to complete work
-        // For now, simplified
-        print("Would complete work task: \(task.description)")
+        // Use ActionExecutor to complete work tasks
+        guard let workType = task.details["type"] else {
+            print("[NightWorker] Work task missing type")
+            return false
+        }
+
+        let executor = ActionExecutor.shared
+
+        switch workType {
+        case "open_app":
+            if let appName = task.details["app"] {
+                return await executor.openApplication(named: appName)
+            }
+
+        case "open_file":
+            if let filePath = task.details["path"] {
+                return await executor.openFile(at: filePath)
+            }
+
+        case "run_script":
+            if let scriptPath = task.details["script"] {
+                return await executor.runScript(at: scriptPath)
+            }
+
+        case "create_document":
+            if let docType = task.details["doc_type"],
+               let title = task.details["title"] {
+                return await executor.createDocument(type: docType, title: title)
+            }
+
+        case "compile_report":
+            if let topic = task.details["topic"] {
+                // Research and compile into a document
+                let researchTask = CloeTask(
+                    id: UUID(),
+                    description: "Research for: \(topic)",
+                    type: .research,
+                    priority: .normal,
+                    createdAt: Date(),
+                    scheduledFor: nil,
+                    status: .pending,
+                    contactName: nil,
+                    details: ["topic": topic]
+                )
+                return await performResearch(researchTask)
+            }
+
+        default:
+            print("[NightWorker] Unknown work task type: \(workType)")
+        }
+
         return false
     }
 
@@ -509,7 +664,7 @@ class NightWorker {
     private func setupNotifications() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
             if granted {
-                print("✓ Notification permission granted")
+                print("OK Notification permission granted")
             }
         }
     }

@@ -409,4 +409,166 @@ class ActionExecutor {
 
         screenController.pressShortcut(key: keyCode, modifiers: modifiers)
     }
+
+    // MARK: - Utility Methods for NightWorker
+
+    /// Open an application by name
+    func openApplication(named appName: String) async -> Bool {
+        let workspace = NSWorkspace.shared
+
+        // Try to open by name
+        if workspace.launchApplication(appName) {
+            print("[ActionExecutor] Opened application: \(appName)")
+            return true
+        }
+
+        // Try with .app extension
+        if workspace.launchApplication("\(appName).app") {
+            return true
+        }
+
+        // Search in Applications folder
+        let appPaths = [
+            "/Applications/\(appName).app",
+            "/Applications/\(appName.replacingOccurrences(of: " ", with: "")).app",
+            "/System/Applications/\(appName).app",
+            NSHomeDirectory() + "/Applications/\(appName).app"
+        ]
+
+        for path in appPaths {
+            let url = URL(fileURLWithPath: path)
+            if FileManager.default.fileExists(atPath: path) {
+                do {
+                    try await NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
+                    print("[ActionExecutor] Opened application at: \(path)")
+                    return true
+                } catch {
+                    continue
+                }
+            }
+        }
+
+        print("[ActionExecutor] Failed to open application: \(appName)")
+        return false
+    }
+
+    /// Open a file at the given path
+    func openFile(at path: String) async -> Bool {
+        let url = URL(fileURLWithPath: path)
+
+        guard FileManager.default.fileExists(atPath: path) else {
+            print("[ActionExecutor] File does not exist: \(path)")
+            return false
+        }
+
+        let success = NSWorkspace.shared.open(url)
+        print("[ActionExecutor] \(success ? "Opened" : "Failed to open") file: \(path)")
+        return success
+    }
+
+    /// Run a script at the given path
+    func runScript(at path: String) async -> Bool {
+        let url = URL(fileURLWithPath: path)
+
+        guard FileManager.default.fileExists(atPath: path) else {
+            print("[ActionExecutor] Script does not exist: \(path)")
+            return false
+        }
+
+        let ext = url.pathExtension.lowercased()
+
+        do {
+            let process = Process()
+
+            switch ext {
+            case "sh", "bash":
+                process.executableURL = URL(fileURLWithPath: "/bin/bash")
+                process.arguments = [path]
+            case "py":
+                process.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
+                process.arguments = [path]
+            case "rb":
+                process.executableURL = URL(fileURLWithPath: "/usr/bin/ruby")
+                process.arguments = [path]
+            case "scpt", "applescript":
+                process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+                process.arguments = [path]
+            default:
+                // Try to run as executable
+                process.executableURL = url
+            }
+
+            try process.run()
+            process.waitUntilExit()
+
+            let success = process.terminationStatus == 0
+            print("[ActionExecutor] Script \(success ? "completed" : "failed"): \(path)")
+            return success
+
+        } catch {
+            print("[ActionExecutor] Error running script: \(error)")
+            return false
+        }
+    }
+
+    /// Create a new document in the appropriate app
+    func createDocument(type docType: String, title: String) async -> Bool {
+        let lowerType = docType.lowercased()
+
+        // Determine which app to use
+        var appName: String
+        var fileExtension: String
+
+        switch lowerType {
+        case "text", "txt", "plain":
+            appName = "TextEdit"
+            fileExtension = "txt"
+        case "rtf", "rich":
+            appName = "TextEdit"
+            fileExtension = "rtf"
+        case "pages":
+            appName = "Pages"
+            fileExtension = "pages"
+        case "word", "doc", "docx":
+            appName = "Microsoft Word"
+            fileExtension = "docx"
+        case "numbers", "spreadsheet":
+            appName = "Numbers"
+            fileExtension = "numbers"
+        case "excel", "xlsx":
+            appName = "Microsoft Excel"
+            fileExtension = "xlsx"
+        case "keynote", "presentation":
+            appName = "Keynote"
+            fileExtension = "key"
+        case "powerpoint", "pptx":
+            appName = "Microsoft PowerPoint"
+            fileExtension = "pptx"
+        default:
+            appName = "TextEdit"
+            fileExtension = "txt"
+        }
+
+        // Create file path
+        let documentsPath = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Documents")
+        let fileName = title.replacingOccurrences(of: " ", with: "_") + ".\(fileExtension)"
+        let filePath = documentsPath.appendingPathComponent(fileName)
+
+        // Create initial content
+        let initialContent = "# \(title)\n\nCreated by Cloe on \(Date())\n\n"
+
+        do {
+            try initialContent.write(to: filePath, atomically: true, encoding: .utf8)
+
+            // Open in the appropriate app
+            let success = await openFile(at: filePath.path)
+            print("[ActionExecutor] Created document: \(filePath.path)")
+            return success
+
+        } catch {
+            print("[ActionExecutor] Error creating document: \(error)")
+            return false
+        }
+    }
 }

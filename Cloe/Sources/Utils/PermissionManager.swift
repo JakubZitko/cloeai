@@ -43,7 +43,7 @@ class PermissionManager {
     // MARK: - Permission Checking
 
     func checkAllPermissions() {
-        print("🔐 Checking all permissions...")
+        print("[LOCK] Checking all permissions...")
 
         let screenRecording = checkScreenRecordingPermission()
         let accessibility = checkAccessibilityPermission()
@@ -118,7 +118,7 @@ class PermissionManager {
     // MARK: - Permission Requesting
 
     func requestAllPermissions() {
-        print("📋 Requesting all permissions...")
+        print("[LIST] Requesting all permissions...")
 
         requestScreenRecordingPermission()
         requestAccessibilityPermission()
@@ -174,7 +174,7 @@ class PermissionManager {
         if status == .notDetermined {
             AVCaptureDevice.requestAccess(for: .audio) { granted in
                 DispatchQueue.main.async {
-                    print("🎤 Microphone permission: \(granted ? "granted" : "denied")")
+                    print("[MIC] Microphone permission: \(granted ? "granted" : "denied")")
                 }
             }
         } else if status == .denied {
@@ -201,9 +201,9 @@ class PermissionManager {
             eventStore.requestAccess(to: .event) { granted, error in
                 DispatchQueue.main.async {
                     if let error = error {
-                        print("❌ Calendar permission error: \(error)")
+                        print("[ERROR] Calendar permission error: \(error)")
                     } else {
-                        print("📅 Calendar permission: \(granted ? "granted" : "denied")")
+                        print("[CAL] Calendar permission: \(granted ? "granted" : "denied")")
                     }
                 }
             }

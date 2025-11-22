@@ -236,9 +236,149 @@ class CalendarTool: Tool {
             }
         }
 
-        // TODO: Implement natural language parsing ("tomorrow at 3pm", "next Monday at 10am")
+        // Natural language parsing
+        if let date = parseNaturalLanguageDate(string) {
+            return date
+        }
 
         throw CalendarError.invalidDateFormat(string)
+    }
+
+    private func parseNaturalLanguageDate(_ input: String) -> Date? {
+        let lowercased = input.lowercased().trimmingCharacters(in: .whitespaces)
+        let calendar = Calendar.current
+        let now = Date()
+
+        // Extract time component
+        var hour = 9 // Default to 9am
+        var minute = 0
+
+        // Parse time patterns
+        let timePatterns: [(pattern: String, handler: (String) -> (Int, Int)?)] = [
+            (#"(\d{1,2}):(\d{2})\s*(am|pm)?"#, { match in
+                let parts = match.components(separatedBy: CharacterSet(charactersIn: ": "))
+                guard parts.count >= 2,
+                      var h = Int(parts[0]),
+                      let m = Int(parts[1].prefix(2)) else { return nil }
+
+                if match.lowercased().contains("pm") && h < 12 { h += 12 }
+                if match.lowercased().contains("am") && h == 12 { h = 0 }
+
+                return (h, m)
+            }),
+            (#"(\d{1,2})\s*(am|pm)"#, { match in
+                let digits = match.filter { $0.isNumber }
+                guard var h = Int(digits) else { return nil }
+
+                if match.lowercased().contains("pm") && h < 12 { h += 12 }
+                if match.lowercased().contains("am") && h == 12 { h = 0 }
+
+                return (h, 0)
+            }),
+            (#"noon"#, { _ in (12, 0) }),
+            (#"midnight"#, { _ in (0, 0) }),
+            (#"morning"#, { _ in (9, 0) }),
+            (#"afternoon"#, { _ in (14, 0) }),
+            (#"evening"#, { _ in (18, 0) }),
+            (#"night"#, { _ in (20, 0) })
+        ]
+
+        for (pattern, handler) in timePatterns {
+            if let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive),
+               let match = regex.firstMatch(in: lowercased, range: NSRange(lowercased.startIndex..., in: lowercased)),
+               let range = Range(match.range, in: lowercased) {
+                let matchStr = String(lowercased[range])
+                if let (h, m) = handler(matchStr) {
+                    hour = h
+                    minute = m
+                }
+            }
+        }
+
+        // Parse date component
+        var targetDate: Date?
+
+        // Today
+        if lowercased.contains("today") {
+            targetDate = now
+        }
+        // Tomorrow
+        else if lowercased.contains("tomorrow") {
+            targetDate = calendar.date(byAdding: .day, value: 1, to: now)
+        }
+        // Day after tomorrow
+        else if lowercased.contains("day after tomorrow") {
+            targetDate = calendar.date(byAdding: .day, value: 2, to: now)
+        }
+        // Next week
+        else if lowercased.contains("next week") {
+            targetDate = calendar.date(byAdding: .weekOfYear, value: 1, to: now)
+        }
+        // In X days/hours/minutes
+        else if let inMatch = lowercased.range(of: #"in\s+(\d+)\s+(day|hour|minute|week|month)s?"#, options: .regularExpression) {
+            let matchStr = String(lowercased[inMatch])
+            let digits = matchStr.filter { $0.isNumber }
+            if let value = Int(digits) {
+                if matchStr.contains("day") {
+                    targetDate = calendar.date(byAdding: .day, value: value, to: now)
+                } else if matchStr.contains("hour") {
+                    targetDate = calendar.date(byAdding: .hour, value: value, to: now)
+                    return targetDate // Return directly for hours
+                } else if matchStr.contains("minute") {
+                    targetDate = calendar.date(byAdding: .minute, value: value, to: now)
+                    return targetDate // Return directly for minutes
+                } else if matchStr.contains("week") {
+                    targetDate = calendar.date(byAdding: .weekOfYear, value: value, to: now)
+                } else if matchStr.contains("month") {
+                    targetDate = calendar.date(byAdding: .month, value: value, to: now)
+                }
+            }
+        }
+        // Weekday names
+        else {
+            let weekdays = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
+            let isNext = lowercased.contains("next")
+
+            for (index, day) in weekdays.enumerated() {
+                if lowercased.contains(day) {
+                    let currentWeekday = calendar.component(.weekday, from: now)
+                    var daysToAdd = index + 1 - currentWeekday
+
+                    if daysToAdd <= 0 || isNext {
+                        daysToAdd += 7
+                    }
+                    if isNext && daysToAdd <= 7 {
+                        daysToAdd += 7
+                    }
+
+                    targetDate = calendar.date(byAdding: .day, value: daysToAdd, to: now)
+                    break
+                }
+            }
+        }
+
+        // If no date found, default to today
+        if targetDate == nil {
+            // Check if only time was specified
+            let hasTime = lowercased.contains("am") || lowercased.contains("pm") ||
+                          lowercased.contains(":") || lowercased.contains("noon") ||
+                          lowercased.contains("midnight")
+            if hasTime {
+                targetDate = now
+            } else {
+                return nil
+            }
+        }
+
+        // Combine date with time
+        guard let date = targetDate else { return nil }
+
+        var components = calendar.dateComponents([.year, .month, .day], from: date)
+        components.hour = hour
+        components.minute = minute
+        components.second = 0
+
+        return calendar.date(from: components)
     }
 }
 

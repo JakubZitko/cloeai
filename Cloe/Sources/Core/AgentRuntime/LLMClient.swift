@@ -45,12 +45,12 @@ class LLMClient {
 
     func setAPIKey(_ key: String, provider: LLMProvider) {
         apiKeys[provider] = key
-        print("🔑 API key set for \(provider)")
+        print("[KEY] API key set for \(provider)")
     }
 
     func setProvider(_ provider: LLMProvider) {
         currentProvider = provider
-        print("🤖 Using LLM provider: \(provider)")
+        print("[BOT] Using LLM provider: \(provider)")
     }
 
     // MARK: - Chat Completion
@@ -63,7 +63,7 @@ class LLMClient {
     ) async throws -> String {
         let selectedModel = model ?? currentProvider.defaultModel
 
-        print("💬 LLM Chat - Provider: \(currentProvider), Model: \(selectedModel)")
+        print("[CHAT] LLM Chat - Provider: \(currentProvider), Model: \(selectedModel)")
 
         switch currentProvider {
         case .openai:

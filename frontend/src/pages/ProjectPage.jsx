@@ -1,8 +1,9 @@
 /**
  * Project Detail Page
+ * Uses WebSocket for real-time updates
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -11,12 +12,78 @@ export default function ProjectPage() {
   const navigate = useNavigate();
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [connected, setConnected] = useState(false);
+  const wsRef = useRef(null);
+  const reconnectTimeoutRef = useRef(null);
+
+  const connectWebSocket = useCallback(() => {
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsHost = import.meta.env.VITE_API_URL?.replace(/^https?:\/\//, '') || window.location.host;
+    const wsUrl = `${wsProtocol}//${wsHost}/ws`;
+
+    try {
+      wsRef.current = new WebSocket(wsUrl);
+
+      wsRef.current.onopen = () => {
+        console.log('[WS] Connected');
+        setConnected(true);
+        // Subscribe to project updates
+        wsRef.current.send(JSON.stringify({ type: 'subscribe', projectId: id }));
+      };
+
+      wsRef.current.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'project_update' && data.projectId === id) {
+            setProject(data.data);
+          }
+        } catch (e) {
+          console.error('[WS] Parse error:', e);
+        }
+      };
+
+      wsRef.current.onclose = () => {
+        console.log('[WS] Disconnected');
+        setConnected(false);
+        // Reconnect after 3 seconds
+        reconnectTimeoutRef.current = setTimeout(connectWebSocket, 3000);
+      };
+
+      wsRef.current.onerror = (error) => {
+        console.error('[WS] Error:', error);
+      };
+    } catch (error) {
+      console.error('[WS] Connection error:', error);
+      // Fallback to polling if WebSocket fails
+      reconnectTimeoutRef.current = setTimeout(connectWebSocket, 5000);
+    }
+  }, [id]);
 
   useEffect(() => {
+    // Load initial project data
     loadProject();
-    const interval = setInterval(loadProject, 3000); // Poll every 3 seconds
-    return () => clearInterval(interval);
-  }, [id]);
+
+    // Connect WebSocket for real-time updates
+    connectWebSocket();
+
+    // Fallback: poll every 10 seconds if WebSocket not connected
+    const pollInterval = setInterval(() => {
+      if (!connected) {
+        loadProject();
+      }
+    }, 10000);
+
+    return () => {
+      // Cleanup
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      clearInterval(pollInterval);
+    };
+  }, [id, connectWebSocket, connected]);
 
   const loadProject = async () => {
     try {

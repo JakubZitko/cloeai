@@ -108,17 +108,124 @@ class EmailTool: Tool {
             throw ToolError.missingParameter("query")
         }
 
-        // Use Spotlight to search emails
-        // TODO: Implement actual email search via Spotlight or Mail.app AppleScript
+        let limit = parameters["limit"] as? Int ?? 10
+
+        // Search emails using AppleScript with Mail.app
+        let script = """
+        tell application "Mail"
+            set foundMessages to {}
+            set searchQuery to "\(query.replacingOccurrences(of: "\"", with: "\\\""))"
+
+            -- Search in all mailboxes
+            repeat with acc in accounts
+                repeat with mbox in mailboxes of acc
+                    try
+                        set msgs to (messages of mbox whose subject contains searchQuery or sender contains searchQuery or content contains searchQuery)
+                        repeat with msg in msgs
+                            if (count of foundMessages) < \(limit) then
+                                set msgInfo to {subject of msg, sender of msg, date received of msg as string, id of msg}
+                                set end of foundMessages to msgInfo
+                            end if
+                        end repeat
+                    end try
+                end repeat
+            end repeat
+
+            return foundMessages
+        end tell
+        """
+
+        var error: NSDictionary?
+        guard let scriptObject = NSAppleScript(source: script) else {
+            throw EmailError.scriptCreationFailed
+        }
+
+        let result = scriptObject.executeAndReturnError(&error)
+
+        if let error = error {
+            // If Mail.app isn't available or permission denied, use Spotlight fallback
+            return try searchEmailsViaSpotlight(query: query, limit: limit)
+        }
+
+        // Parse AppleScript result
+        var emailResults: [[String: String]] = []
+
+        if let resultList = result.coerce(toDescriptorType: typeAEList) {
+            let count = resultList.numberOfItems
+            for i in 1...count {
+                if let item = resultList.atIndex(i),
+                   let itemList = item.coerce(toDescriptorType: typeAEList) {
+                    let subject = itemList.atIndex(1)?.stringValue ?? "No Subject"
+                    let sender = itemList.atIndex(2)?.stringValue ?? "Unknown"
+                    let date = itemList.atIndex(3)?.stringValue ?? ""
+                    let id = itemList.atIndex(4)?.stringValue ?? ""
+
+                    emailResults.append([
+                        "subject": subject,
+                        "sender": sender,
+                        "date": date,
+                        "id": id
+                    ])
+                }
+            }
+        }
 
         return ToolResult(
             success: true,
-            message: "Searched emails for: \(query)",
+            message: "Found \(emailResults.count) emails matching '\(query)'",
             data: [
                 "query": query,
-                "results": [] // Placeholder
+                "results": emailResults
             ]
         )
+    }
+
+    private func searchEmailsViaSpotlight(query: String, limit: Int) throws -> ToolResult {
+        // Use Spotlight (mdfind) for email search as fallback
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/mdfind")
+        process.arguments = [
+            "-limit", String(limit),
+            "kMDItemContentType == 'com.apple.mail.emlx' && (kMDItemSubject == '*\(query)*'cd || kMDItemAuthors == '*\(query)*'cd)"
+        ]
+
+        let pipe = Pipe()
+        process.standardOutput = pipe
+
+        do {
+            try process.run()
+            process.waitUntilExit()
+
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: data, encoding: .utf8) ?? ""
+
+            let paths = output.components(separatedBy: "\n").filter { !$0.isEmpty }
+
+            var results: [[String: String]] = []
+            for path in paths.prefix(limit) {
+                // Extract basic info from path
+                let filename = (path as NSString).lastPathComponent
+                results.append([
+                    "path": path,
+                    "filename": filename
+                ])
+            }
+
+            return ToolResult(
+                success: true,
+                message: "Found \(results.count) emails via Spotlight for '\(query)'",
+                data: [
+                    "query": query,
+                    "results": results
+                ]
+            )
+        } catch {
+            return ToolResult(
+                success: false,
+                message: "Email search failed: \(error.localizedDescription)",
+                data: ["query": query, "results": []]
+            )
+        }
     }
 
     // MARK: - AppleScript Execution

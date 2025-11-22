@@ -118,7 +118,7 @@ class LearningEngine {
             self?.captureSnapshot()
         }
 
-        print("🧠 LearningEngine: Started observing")
+        print("[BRAIN] LearningEngine: Started observing")
     }
 
     func stopObserving() {
@@ -129,7 +129,7 @@ class LearningEngine {
         NSWorkspace.shared.notificationCenter.removeObserver(self)
         saveLearnedData()
 
-        print("🧠 LearningEngine: Stopped observing")
+        print("[BRAIN] LearningEngine: Stopped observing")
     }
 
     // MARK: - Observation Callbacks
@@ -404,6 +404,38 @@ class LearningEngine {
         return nil
     }
 
+    // MARK: - Public Accessors for UI
+
+    /// Get all recent actions for Activity Log
+    func getRecentActions() -> [UserAction] {
+        return recentActions
+    }
+
+    /// Get all recent app usage
+    func getRecentAppUsage() -> [AppUsage] {
+        return recentApps
+    }
+
+    /// Get all learned workflows
+    func getLearnedWorkflows() -> [Workflow] {
+        return learnedWorkflows
+    }
+
+    /// Get all learned contacts
+    func getLearnedContacts() -> [Contact] {
+        return learnedContacts
+    }
+
+    /// Get learning statistics
+    func getStatistics() -> (actions: Int, contacts: Int, workflows: Int, apps: Int) {
+        return (
+            actions: recentActions.count,
+            contacts: learnedContacts.count,
+            workflows: learnedWorkflows.count,
+            apps: Set(recentApps.map { $0.appName }).count
+        )
+    }
+
     // MARK: - Persistence
 
     private func loadLearnedData() {
@@ -419,7 +451,7 @@ class LearningEngine {
             learnedWorkflows = workflows
         }
 
-        print("🧠 LearningEngine: Loaded \(learnedContacts.count) contacts, \(learnedWorkflows.count) workflows")
+        print("[BRAIN] LearningEngine: Loaded \(learnedContacts.count) contacts, \(learnedWorkflows.count) workflows")
     }
 
     private func saveLearnedData() {

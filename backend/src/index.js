@@ -10,6 +10,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { createServer } from 'http';
+import { WebSocketServer } from 'ws';
 
 // Import routes
 import authRoutes from './auth/routes.js';
@@ -28,7 +30,66 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
+const server = createServer(app);
 const PORT = process.env.PORT || 3000;
+
+// WebSocket server for real-time updates
+const wss = new WebSocketServer({ server, path: '/ws' });
+
+// Store connected clients by project ID
+const projectClients = new Map();
+
+wss.on('connection', (ws, req) => {
+  console.log('[WS] Client connected');
+
+  ws.on('message', (message) => {
+    try {
+      const data = JSON.parse(message);
+
+      if (data.type === 'subscribe' && data.projectId) {
+        // Subscribe to project updates
+        if (!projectClients.has(data.projectId)) {
+          projectClients.set(data.projectId, new Set());
+        }
+        projectClients.get(data.projectId).add(ws);
+        ws.projectId = data.projectId;
+        console.log(`[WS] Client subscribed to project ${data.projectId}`);
+
+        // Send acknowledgment
+        ws.send(JSON.stringify({ type: 'subscribed', projectId: data.projectId }));
+      }
+    } catch (e) {
+      console.error('[WS] Message parse error:', e);
+    }
+  });
+
+  ws.on('close', () => {
+    // Remove from project subscribers
+    if (ws.projectId && projectClients.has(ws.projectId)) {
+      projectClients.get(ws.projectId).delete(ws);
+      if (projectClients.get(ws.projectId).size === 0) {
+        projectClients.delete(ws.projectId);
+      }
+    }
+    console.log('[WS] Client disconnected');
+  });
+
+  ws.on('error', (error) => {
+    console.error('[WS] Error:', error);
+  });
+});
+
+// Export function to broadcast project updates
+export function broadcastProjectUpdate(projectId, data) {
+  if (projectClients.has(projectId)) {
+    const message = JSON.stringify({ type: 'project_update', projectId, data });
+    projectClients.get(projectId).forEach((client) => {
+      if (client.readyState === 1) { // WebSocket.OPEN
+        client.send(message);
+      }
+    });
+  }
+}
 
 // Middleware
 app.use(cors({
@@ -86,21 +147,22 @@ async function startServer() {
   try {
     // Connect to database
     await connectDatabase();
-    console.log('✅ Database connected');
+    console.log('[OK] Database connected');
 
     // Connect to Redis
     await initRedis();
-    console.log('✅ Redis connected');
+    console.log('[OK] Redis connected');
 
-    // Start server
-    app.listen(PORT, () => {
-      console.log(`🚀 Cloe Video Backend running on port ${PORT}`);
+    // Start server (use http server for WebSocket support)
+    server.listen(PORT, () => {
+      console.log(`[SERVER] Cloe Video Backend running on port ${PORT}`);
       console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`   Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
+      console.log(`   WebSocket: ws://localhost:${PORT}/ws`);
     });
 
   } catch (error) {
-    console.error('❌ Failed to start server:', error);
+    console.error('[ERROR] Failed to start server:', error);
     process.exit(1);
   }
 }

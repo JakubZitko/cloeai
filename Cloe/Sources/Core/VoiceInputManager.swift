@@ -41,7 +41,7 @@ class VoiceInputManager: NSObject, ObservableObject {
         SFSpeechRecognizer.requestAuthorization { [weak self] status in
             DispatchQueue.main.async {
                 self?.permissionGranted = (status == .authorized)
-                print("🎤 Speech recognition permission: \(status)")
+                print("[MIC] Speech recognition permission: \(status)")
             }
         }
     }
@@ -51,15 +51,15 @@ class VoiceInputManager: NSObject, ObservableObject {
             DispatchQueue.main.async {
                 switch status {
                 case .authorized:
-                    print("✅ Speech recognition authorized")
+                    print("[OK] Speech recognition authorized")
                     self.permissionGranted = true
                 case .denied:
-                    print("❌ Speech recognition denied")
+                    print("[ERROR] Speech recognition denied")
                     self.showPermissionDeniedAlert()
                 case .restricted, .notDetermined:
-                    print("⚠️ Speech recognition restricted or not determined")
+                    print("[WARN] Speech recognition restricted or not determined")
                 @unknown default:
-                    print("❌ Unknown speech recognition status")
+                    print("[ERROR] Unknown speech recognition status")
                 }
             }
         }
@@ -80,9 +80,9 @@ class VoiceInputManager: NSObject, ObservableObject {
                 self.isListening = true
                 self.transcript = ""
             }
-            print("🎤 Started listening...")
+            print("[MIC] Started listening...")
         } catch {
-            print("❌ Failed to start recording: \(error)")
+            print("[ERROR] Failed to start recording: \(error)")
         }
     }
 
@@ -96,7 +96,7 @@ class VoiceInputManager: NSObject, ObservableObject {
             self.isListening = false
         }
 
-        print("🛑 Stopped listening")
+        print("[STOP] Stopped listening")
     }
 
     // MARK: - Speech Recognition
@@ -162,7 +162,7 @@ class VoiceInputManager: NSObject, ObservableObject {
                 self.recognitionTask = nil
 
                 if isFinal {
-                    print("✅ Speech recognition completed: \(self.transcript)")
+                    print("[OK] Speech recognition completed: \(self.transcript)")
                 }
             }
         }
