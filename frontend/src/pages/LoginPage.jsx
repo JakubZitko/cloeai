@@ -16,6 +16,13 @@ export default function LoginPage({ onLogin }) {
     window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/auth/google`;
   };
 
+  const handleDevLogin = () => {
+    window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/auth/dev-login`;
+  };
+
+  // Show dev login in development mode
+  const isDev = import.meta.env.DEV || window.location.hostname === 'localhost';
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 flex items-center justify-center px-4">
       <div className="max-w-md w-full space-y-8">
@@ -32,7 +39,7 @@ export default function LoginPage({ onLogin }) {
           <p className="text-gray-300 text-lg">Your intelligent desktop assistant</p>
         </div>
 
-        {/* Login Button */}
+        {/* Login Buttons */}
         <div className="space-y-4">
           <button
             onClick={handleGoogleLogin}
@@ -46,6 +53,19 @@ export default function LoginPage({ onLogin }) {
             </svg>
             <span>Continue with Google</span>
           </button>
+
+          {/* Dev Login - only shown in development */}
+          {isDev && (
+            <button
+              onClick={handleDevLogin}
+              className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              </svg>
+              <span>Dev Login (Demo User)</span>
+            </button>
+          )}
         </div>
 
         {/* Features */}

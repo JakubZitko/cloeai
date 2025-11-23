@@ -35,6 +35,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var learningEngine: LearningEngine?
     var nightWorker: NightWorker?
     var screenController: ScreenController?
+    var cloudSync: CloudSync?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         print("""
@@ -109,6 +110,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Night Worker - autonomous task completion
         nightWorker = NightWorker.shared
         print("[NIGHT] Night Worker: Ready")
+
+        // Cloud Sync - sync to web dashboard
+        cloudSync = CloudSync.shared
+        if cloudSync?.isLoggedIn == true {
+            cloudSync?.startSync()
+            print("[CLOUD] Cloud Sync: Active")
+        } else {
+            print("[CLOUD] Cloud Sync: Not logged in (use Settings to connect)")
+        }
     }
 
     private func setupMenuBar() {
@@ -457,6 +467,12 @@ struct SettingsView: View {
                 Label("General", systemImage: "gear")
             }
 
+            // Cloud Sync
+            CloudSettingsView()
+                .tabItem {
+                    Label("Cloud", systemImage: "cloud")
+                }
+
             // API Keys
             Form {
                 Section("AI Provider") {
@@ -498,7 +514,93 @@ struct SettingsView: View {
                 Label("Permissions", systemImage: "lock.shield")
             }
         }
-        .frame(width: 450, height: 300)
+        .frame(width: 450, height: 350)
+    }
+}
+
+// MARK: - Cloud Settings View
+
+struct CloudSettingsView: View {
+    @State private var isLoggedIn = CloudSync.shared.isLoggedIn
+    @State private var apiToken = ""
+    @State private var dashboardURL = "http://localhost:5173"
+    @State private var syncStatus = "Not connected"
+    @State private var showingTokenInput = false
+
+    var body: some View {
+        Form {
+            Section("Account") {
+                if isLoggedIn {
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                        Text("Connected to Cloe Dashboard")
+                    }
+
+                    Text(syncStatus)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    Button("Disconnect") {
+                        CloudSync.shared.logout()
+                        isLoggedIn = false
+                        syncStatus = "Not connected"
+                    }
+                    .foregroundColor(.red)
+                } else {
+                    HStack {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.orange)
+                        Text("Not connected")
+                    }
+
+                    Text("Connect to sync your data to the web dashboard")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    Button("Open Dashboard to Connect") {
+                        if let url = URL(string: dashboardURL) {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }
+
+                    Divider()
+
+                    Text("After logging in to the dashboard, paste your API token below:")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    SecureField("API Token", text: $apiToken)
+
+                    Button("Connect") {
+                        if !apiToken.isEmpty {
+                            CloudSync.shared.setAuthToken(apiToken)
+                            CloudSync.shared.startSync()
+                            isLoggedIn = true
+                            syncStatus = "Syncing..."
+                            apiToken = ""
+                        }
+                    }
+                    .disabled(apiToken.isEmpty)
+                }
+            }
+
+            Section("Settings") {
+                TextField("Dashboard URL", text: $dashboardURL)
+                    .font(.system(.body, design: .monospaced))
+
+                Text("Default: http://localhost:5173")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding()
+        .onAppear {
+            isLoggedIn = CloudSync.shared.isLoggedIn
+            if isLoggedIn {
+                syncStatus = "Connected and syncing"
+            }
+        }
     }
 }
 
