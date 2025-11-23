@@ -18,6 +18,7 @@ import authRoutes from './auth/routes.js';
 import videoRoutes from './api/video.js';
 import projectRoutes from './api/projects.js';
 import userRoutes from './api/user.js';
+import cloeRoutes from './api/cloe.js';
 
 // Import config
 import './auth/passport-config.js';
@@ -121,6 +122,7 @@ app.use('/auth', authRoutes);
 app.use('/api/videos', videoRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/cloe', cloeRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

@@ -1,5 +1,6 @@
 /**
- * Cloe Video - Main App Component
+ * Cloe AI - Dashboard Web App
+ * Companion dashboard for the Cloe AI macOS assistant
  */
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -9,8 +10,10 @@ import axios from 'axios';
 // Pages
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
-import UploadPage from './pages/UploadPage';
-import ProjectPage from './pages/ProjectPage';
+import ActivityPage from './pages/ActivityPage';
+import ContactsPage from './pages/ContactsPage';
+import WorkflowsPage from './pages/WorkflowsPage';
+import SettingsPage from './pages/SettingsPage';
 
 // Configure axios
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -62,13 +65,23 @@ function App() {
         />
 
         <Route
-          path="/upload"
-          element={user ? <UploadPage user={user} /> : <Navigate to="/login" />}
+          path="/activity"
+          element={user ? <ActivityPage user={user} /> : <Navigate to="/login" />}
         />
 
         <Route
-          path="/project/:id"
-          element={user ? <ProjectPage user={user} /> : <Navigate to="/login" />}
+          path="/contacts"
+          element={user ? <ContactsPage user={user} /> : <Navigate to="/login" />}
+        />
+
+        <Route
+          path="/workflows"
+          element={user ? <WorkflowsPage user={user} /> : <Navigate to="/login" />}
+        />
+
+        <Route
+          path="/settings"
+          element={user ? <SettingsPage user={user} /> : <Navigate to="/login" />}
         />
       </Routes>
     </BrowserRouter>
