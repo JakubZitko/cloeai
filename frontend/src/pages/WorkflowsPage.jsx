@@ -1,5 +1,6 @@
 /**
  * Workflows Page - Shows learned and created workflows
+ * Monochrome Design: black, white, gray only
  */
 
 import { useState, useEffect } from 'react';
@@ -45,15 +46,16 @@ export default function WorkflowsPage({ user }) {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Workflows</h1>
-            <p className="text-gray-400">Automated sequences Cloe has learned from your patterns</p>
+            <h1 className="text-3xl font-bold mb-2" style={{ color: '#fafafa' }}>Workflows</h1>
+            <p style={{ color: '#737373' }}>Automated sequences Cloe has learned from your patterns</p>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+            className="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+            style={{ backgroundColor: '#fafafa', color: '#0a0a0a' }}
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
             </svg>
             Create Workflow
           </button>
@@ -62,24 +64,25 @@ export default function WorkflowsPage({ user }) {
         {/* Workflow List */}
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2" style={{ borderColor: '#525252' }}></div>
           </div>
         ) : workflows.length > 0 ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {workflows.map(workflow => (
               <div
                 key={workflow.id}
-                className="bg-gray-800 rounded-lg p-6 hover:bg-gray-750 transition-colors"
+                className="rounded-lg p-6 transition-colors"
+                style={{ backgroundColor: '#1a1a1a' }}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-white">{workflow.name}</h3>
-                    <p className="text-gray-400 text-sm mt-1">
+                    <h3 className="text-lg font-semibold" style={{ color: '#fafafa' }}>{workflow.name}</h3>
+                    <p className="text-sm mt-1" style={{ color: '#525252' }}>
                       {workflow.steps.length} steps
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="px-2 py-1 bg-purple-600/20 text-purple-400 rounded text-xs">
+                    <span className="px-2 py-1 rounded text-xs" style={{ backgroundColor: '#262626', color: '#a3a3a3' }}>
                       Used {workflow.frequency}x
                     </span>
                   </div>
@@ -89,16 +92,16 @@ export default function WorkflowsPage({ user }) {
                 <div className="space-y-2 mb-4">
                   {workflow.steps.slice(0, 3).map((step, index) => (
                     <div key={index} className="flex items-center gap-3">
-                      <div className="w-6 h-6 bg-gray-700 rounded-full flex items-center justify-center text-xs text-gray-400">
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs" style={{ backgroundColor: '#262626', color: '#737373' }}>
                         {index + 1}
                       </div>
-                      <span className="text-gray-300 text-sm">
-                        {step.action} in <span className="text-blue-400">{step.app}</span>
+                      <span className="text-sm" style={{ color: '#a3a3a3' }}>
+                        {step.action} in <span style={{ color: '#fafafa' }}>{step.app}</span>
                       </span>
                     </div>
                   ))}
                   {workflow.steps.length > 3 && (
-                    <p className="text-gray-500 text-sm pl-9">
+                    <p className="text-sm pl-9" style={{ color: '#525252' }}>
                       +{workflow.steps.length - 3} more steps
                     </p>
                   )}
@@ -107,10 +110,10 @@ export default function WorkflowsPage({ user }) {
                 {/* Triggers */}
                 {workflow.triggerPatterns?.length > 0 && (
                   <div className="mb-4">
-                    <p className="text-gray-400 text-xs mb-2">Trigger phrases:</p>
+                    <p className="text-xs mb-2" style={{ color: '#525252' }}>Trigger phrases:</p>
                     <div className="flex flex-wrap gap-2">
                       {workflow.triggerPatterns.slice(0, 3).map((trigger, i) => (
-                        <span key={i} className="px-2 py-1 bg-gray-700 rounded text-xs text-gray-300">
+                        <span key={i} className="px-2 py-1 rounded text-xs" style={{ backgroundColor: '#262626', color: '#737373' }}>
                           "{trigger}"
                         </span>
                       ))}
@@ -119,20 +122,22 @@ export default function WorkflowsPage({ user }) {
                 )}
 
                 {/* Actions */}
-                <div className="flex items-center justify-between pt-4 border-t border-gray-700">
-                  <span className="text-gray-500 text-xs">
+                <div className="flex items-center justify-between pt-4" style={{ borderTop: '1px solid #262626' }}>
+                  <span className="text-xs" style={{ color: '#525252' }}>
                     Last used: {new Date(workflow.lastUsed).toLocaleDateString()}
                   </span>
                   <div className="flex gap-2">
                     <button
                       onClick={() => setSelectedWorkflow(workflow)}
-                      className="px-3 py-1 bg-gray-700 text-white rounded hover:bg-gray-600 text-sm"
+                      className="px-3 py-1 rounded text-sm"
+                      style={{ backgroundColor: '#262626', color: '#fafafa' }}
                     >
                       View
                     </button>
                     <button
                       onClick={() => deleteWorkflow(workflow.id)}
-                      className="px-3 py-1 bg-red-600/20 text-red-400 rounded hover:bg-red-600/30 text-sm"
+                      className="px-3 py-1 rounded text-sm"
+                      style={{ backgroundColor: '#262626', color: '#737373' }}
                     >
                       Delete
                     </button>
@@ -143,14 +148,15 @@ export default function WorkflowsPage({ user }) {
           </div>
         ) : (
           <div className="text-center py-16">
-            <svg className="w-16 h-16 text-gray-600 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+            <svg className="w-16 h-16 mx-auto mb-4" style={{ color: '#525252' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
             </svg>
-            <p className="text-gray-400 text-lg">No workflows yet</p>
-            <p className="text-gray-500 mt-2">Cloe will learn workflows from your repeated patterns</p>
+            <p className="text-lg" style={{ color: '#737373' }}>No workflows yet</p>
+            <p className="mt-2" style={{ color: '#525252' }}>Cloe will learn workflows from your repeated patterns</p>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="mt-4 px-6 py-2 rounded-lg transition-colors"
+              style={{ backgroundColor: '#fafafa', color: '#0a0a0a' }}
             >
               Create Your First Workflow
             </button>
@@ -185,30 +191,30 @@ export default function WorkflowsPage({ user }) {
 
 function WorkflowModal({ workflow, onClose, onDelete }) {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-lg p-6 w-full max-w-lg mx-4">
+    <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}>
+      <div className="rounded-lg p-6 w-full max-w-lg mx-4" style={{ backgroundColor: '#1a1a1a' }}>
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-white">{workflow.name}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
+          <h2 className="text-xl font-semibold" style={{ color: '#fafafa' }}>{workflow.name}</h2>
+          <button onClick={onClose} style={{ color: '#525252' }}>
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
         {/* All Steps */}
         <div className="space-y-3 mb-6">
-          <h3 className="text-sm font-medium text-gray-400">Steps</h3>
+          <h3 className="text-sm font-medium" style={{ color: '#525252' }}>Steps</h3>
           {workflow.steps.map((step, index) => (
-            <div key={index} className="flex items-start gap-3 p-3 bg-gray-700/50 rounded-lg">
-              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-sm text-white font-medium">{index + 1}</span>
+            <div key={index} className="flex items-start gap-3 p-3 rounded-lg" style={{ backgroundColor: '#262626' }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#fafafa', color: '#0a0a0a' }}>
+                <span className="text-sm font-medium">{index + 1}</span>
               </div>
               <div>
-                <p className="text-white">{step.action}</p>
-                <p className="text-gray-400 text-sm">in {step.app}</p>
+                <p style={{ color: '#fafafa' }}>{step.action}</p>
+                <p className="text-sm" style={{ color: '#737373' }}>in {step.app}</p>
                 {step.details && (
-                  <p className="text-gray-500 text-xs mt-1">{step.details}</p>
+                  <p className="text-xs mt-1" style={{ color: '#525252' }}>{step.details}</p>
                 )}
               </div>
             </div>
@@ -218,10 +224,10 @@ function WorkflowModal({ workflow, onClose, onDelete }) {
         {/* Trigger Phrases */}
         {workflow.triggerPatterns?.length > 0 && (
           <div className="mb-6">
-            <h3 className="text-sm font-medium text-gray-400 mb-2">Trigger Phrases</h3>
+            <h3 className="text-sm font-medium mb-2" style={{ color: '#525252' }}>Trigger Phrases</h3>
             <div className="flex flex-wrap gap-2">
               {workflow.triggerPatterns.map((trigger, i) => (
-                <span key={i} className="px-3 py-1 bg-gray-700 rounded-full text-sm text-gray-300">
+                <span key={i} className="px-3 py-1 rounded-full text-sm" style={{ backgroundColor: '#262626', color: '#a3a3a3' }}>
                   "{trigger}"
                 </span>
               ))}
@@ -231,13 +237,13 @@ function WorkflowModal({ workflow, onClose, onDelete }) {
 
         {/* Stats */}
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-gray-700/50 rounded-lg p-3">
-            <p className="text-gray-400 text-sm">Times Used</p>
-            <p className="text-xl font-semibold text-white">{workflow.frequency}</p>
+          <div className="rounded-lg p-3" style={{ backgroundColor: '#262626' }}>
+            <p className="text-sm" style={{ color: '#525252' }}>Times Used</p>
+            <p className="text-xl font-semibold" style={{ color: '#fafafa' }}>{workflow.frequency}</p>
           </div>
-          <div className="bg-gray-700/50 rounded-lg p-3">
-            <p className="text-gray-400 text-sm">Last Used</p>
-            <p className="text-xl font-semibold text-white">
+          <div className="rounded-lg p-3" style={{ backgroundColor: '#262626' }}>
+            <p className="text-sm" style={{ color: '#525252' }}>Last Used</p>
+            <p className="text-xl font-semibold" style={{ color: '#fafafa' }}>
               {new Date(workflow.lastUsed).toLocaleDateString()}
             </p>
           </div>
@@ -247,13 +253,15 @@ function WorkflowModal({ workflow, onClose, onDelete }) {
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+            className="flex-1 py-2 rounded-lg transition-colors"
+            style={{ backgroundColor: '#262626', color: '#fafafa' }}
           >
             Close
           </button>
           <button
             onClick={onDelete}
-            className="px-4 py-2 bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600/30 transition-colors"
+            className="px-4 py-2 rounded-lg transition-colors"
+            style={{ backgroundColor: '#262626', color: '#737373' }}
           >
             Delete
           </button>
@@ -304,13 +312,13 @@ function CreateWorkflowModal({ onClose, onCreate }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto">
-      <div className="bg-gray-800 rounded-lg p-6 w-full max-w-lg mx-4 my-8">
+    <div className="fixed inset-0 flex items-center justify-center z-50 overflow-y-auto" style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}>
+      <div className="rounded-lg p-6 w-full max-w-lg mx-4 my-8" style={{ backgroundColor: '#1a1a1a' }}>
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-white">Create Workflow</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
+          <h2 className="text-xl font-semibold" style={{ color: '#fafafa' }}>Create Workflow</h2>
+          <button onClick={onClose} style={{ color: '#525252' }}>
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
@@ -318,7 +326,7 @@ function CreateWorkflowModal({ onClose, onCreate }) {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium mb-2" style={{ color: '#a3a3a3' }}>
               Workflow Name
             </label>
             <input
@@ -326,21 +334,22 @@ function CreateWorkflowModal({ onClose, onCreate }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g., Morning routine"
-              className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+              className="w-full px-4 py-2 rounded-lg focus:outline-none"
+              style={{ backgroundColor: '#262626', color: '#fafafa', border: '1px solid #262626' }}
               required
             />
           </div>
 
           {/* Steps */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium mb-2" style={{ color: '#a3a3a3' }}>
               Steps
             </label>
             <div className="space-y-3">
               {steps.map((step, index) => (
                 <div key={index} className="flex gap-2">
-                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-2">
-                    <span className="text-sm text-white">{index + 1}</span>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-2" style={{ backgroundColor: '#fafafa', color: '#0a0a0a' }}>
+                    <span className="text-sm">{index + 1}</span>
                   </div>
                   <div className="flex-1 space-y-2">
                     <input
@@ -348,24 +357,27 @@ function CreateWorkflowModal({ onClose, onCreate }) {
                       value={step.app}
                       onChange={(e) => updateStep(index, 'app', e.target.value)}
                       placeholder="App name"
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 text-sm focus:outline-none focus:border-blue-500"
+                      className="w-full px-3 py-2 rounded-lg text-sm focus:outline-none"
+                      style={{ backgroundColor: '#262626', color: '#fafafa', border: '1px solid #262626' }}
                     />
                     <input
                       type="text"
                       value={step.action}
                       onChange={(e) => updateStep(index, 'action', e.target.value)}
                       placeholder="Action description"
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 text-sm focus:outline-none focus:border-blue-500"
+                      className="w-full px-3 py-2 rounded-lg text-sm focus:outline-none"
+                      style={{ backgroundColor: '#262626', color: '#fafafa', border: '1px solid #262626' }}
                     />
                   </div>
                   {steps.length > 1 && (
                     <button
                       type="button"
                       onClick={() => removeStep(index)}
-                      className="text-gray-400 hover:text-red-400 mt-2"
+                      className="mt-2"
+                      style={{ color: '#525252' }}
                     >
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                     </button>
                   )}
@@ -375,10 +387,11 @@ function CreateWorkflowModal({ onClose, onCreate }) {
             <button
               type="button"
               onClick={addStep}
-              className="mt-3 text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1"
+              className="mt-3 text-sm flex items-center gap-1"
+              style={{ color: '#737373' }}
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
               </svg>
               Add Step
             </button>
@@ -386,7 +399,7 @@ function CreateWorkflowModal({ onClose, onCreate }) {
 
           {/* Triggers */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium mb-2" style={{ color: '#a3a3a3' }}>
               Trigger Phrases (optional)
             </label>
             <input
@@ -394,9 +407,10 @@ function CreateWorkflowModal({ onClose, onCreate }) {
               value={triggers[0]}
               onChange={(e) => setTriggers([e.target.value])}
               placeholder="e.g., start my morning routine"
-              className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+              className="w-full px-4 py-2 rounded-lg focus:outline-none"
+              style={{ backgroundColor: '#262626', color: '#fafafa', border: '1px solid #262626' }}
             />
-            <p className="text-gray-500 text-xs mt-1">
+            <p className="text-xs mt-1" style={{ color: '#525252' }}>
               Say this to Cloe to trigger the workflow
             </p>
           </div>
@@ -406,14 +420,16 @@ function CreateWorkflowModal({ onClose, onCreate }) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              className="flex-1 py-2 rounded-lg transition-colors"
+              style={{ backgroundColor: '#262626', color: '#fafafa' }}
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving || !name}
-              className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 py-2 rounded-lg transition-colors disabled:opacity-50"
+              style={{ backgroundColor: '#fafafa', color: '#0a0a0a' }}
             >
               {saving ? 'Creating...' : 'Create Workflow'}
             </button>
