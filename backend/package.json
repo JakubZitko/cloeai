@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "worker": "node src/workers/render-worker.js"
+    "worker": "node src/workers/render-worker.js",
+    "seed": "node src/scripts/seed-demo-data.js"
   },
   "dependencies": {
     "express": "^4.18.2",

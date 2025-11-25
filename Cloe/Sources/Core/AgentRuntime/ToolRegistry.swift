@@ -41,7 +41,7 @@ class ToolRegistry {
 
     func register(_ tool: Tool) {
         tools[tool.name] = tool
-        print("🔧 Registered tool: \(tool.name)")
+        print("[TOOL] Registered tool: \(tool.name)")
     }
 
     func getTool(named name: String) -> Tool? {

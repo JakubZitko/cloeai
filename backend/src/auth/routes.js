@@ -5,8 +5,64 @@
 
 import express from 'express';
 import passport from 'passport';
+import User from '../models/User.js';
 
 const router = express.Router();
+
+// ============================================
+// DEV LOGIN - Only works in development mode
+// ============================================
+router.get('/dev-login', async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: 'Not found' });
+  }
+
+  try {
+    // Find or create demo user
+    let [user] = await User.findOrCreate({
+      where: { email: 'demo@cloe.ai' },
+      defaults: {
+        name: 'Demo User',
+        email: 'demo@cloe.ai',
+        googleId: 'demo-google-id-12345',
+        provider: 'google',
+        subscription: 'pro',
+        creditsRemaining: 100
+      }
+    });
+
+    // Log them in
+    req.login(user, (err) => {
+      if (err) {
+        return res.status(500).json({ error: 'Login failed' });
+      }
+
+      const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5173';
+      res.redirect(`${frontendURL}/dashboard?login=success`);
+    });
+  } catch (error) {
+    console.error('Dev login error:', error);
+    res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+// Get API token for desktop app (dev mode)
+router.get('/dev-token', async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: 'Not found' });
+  }
+
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  // In a real app, this would generate a proper JWT token
+  // For demo purposes, we use the session ID
+  res.json({
+    token: req.sessionID,
+    message: 'Use this token in the macOS app Settings > Cloud to connect'
+  });
+});
 
 // Google OAuth login
 router.get('/google',

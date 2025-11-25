@@ -25,6 +25,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem?
     var notchWindow: NotchWindow?
     var hotKeyMonitor: HotKeyMonitor?
+    var activityLogWindow: NSWindow?
+    var learnedPatternsWindow: NSWindow?
 
     // Core systems
     var permissionManager: PermissionManager?
@@ -33,14 +35,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var learningEngine: LearningEngine?
     var nightWorker: NightWorker?
     var screenController: ScreenController?
+    var cloudSync: CloudSync?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         print("""
 
-        ╔═══════════════════════════════════════╗
-        ║           🧠 CLOE AI                  ║
-        ║      Your Personal AI Assistant       ║
-        ╚═══════════════════════════════════════╝
+        ============================================
+                       CLOE AI
+              Your Personal AI Assistant
+        ============================================
 
         """)
 
@@ -54,7 +57,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         setupHotKey()
         setupAutonomousMode()
 
-        print("✅ Cloe is ready!")
+        print("[OK] Cloe is ready!")
         print("   Press Cmd+Shift+Space to activate")
         print("   Or click the menu bar icon")
         print("")
@@ -66,7 +69,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        print("👋 Cloe is shutting down...")
+        print("[INFO] Cloe is shutting down...")
         cleanupResources()
     }
 
@@ -79,34 +82,43 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         permissionManager?.checkAllPermissions()
 
         // These are critical for Cloe to work
-        print("📋 Permission Status:")
-        print("   • Screen Recording: \(permissionManager?.hasScreenRecordingPermission ?? false ? "✓" : "✗")")
-        print("   • Accessibility: \(permissionManager?.hasAccessibilityPermission ?? false ? "✓" : "✗")")
+        print("[PERMISSIONS] Status:")
+        print("   - Screen Recording: \(permissionManager?.hasScreenRecordingPermission ?? false ? "OK" : "MISSING")")
+        print("   - Accessibility: \(permissionManager?.hasAccessibilityPermission ?? false ? "OK" : "MISSING")")
     }
 
     private func setupCoreEngines() {
         // Context Engine - watches what's on screen
         contextEngine = ContextEngine.shared
         contextEngine?.startMonitoring()
-        print("👁 Context Engine: Active")
+        print("[CONTEXT] Context Engine: Active")
 
         // Learning Engine - learns from user behavior
         learningEngine = LearningEngine.shared
         learningEngine?.startObserving()
-        print("🧠 Learning Engine: Active")
+        print("[LEARNING] Learning Engine: Active")
 
         // Screen Controller - for executing actions
         screenController = ScreenController.shared
-        print("🖱 Screen Controller: Ready")
+        print("[SCREEN] Screen Controller: Ready")
 
         // Agent Runtime - AI brain
         agentRuntime = AgentRuntime.shared
         agentRuntime?.initialize()
-        print("🤖 Agent Runtime: Ready")
+        print("[AGENT] Agent Runtime: Ready")
 
         // Night Worker - autonomous task completion
         nightWorker = NightWorker.shared
-        print("🌙 Night Worker: Ready")
+        print("[NIGHT] Night Worker: Ready")
+
+        // Cloud Sync - sync to web dashboard
+        cloudSync = CloudSync.shared
+        if cloudSync?.isLoggedIn == true {
+            cloudSync?.startSync()
+            print("[CLOUD] Cloud Sync: Active")
+        } else {
+            print("[CLOUD] Cloud Sync: Not logged in (use Settings to connect)")
+        }
     }
 
     private func setupMenuBar() {
@@ -135,7 +147,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         hotKeyMonitor?.registerHotKey(keyCode: 49, modifiers: [.command, .shift]) { [weak self] in
             self?.toggleNotch()
         }
-        print("⌨️ Hotkey registered: Cmd+Shift+Space")
+        print("[HOTKEY] Registered: Cmd+Shift+Space")
     }
 
     private func setupAutonomousMode() {
@@ -206,7 +218,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
 
         // Status header
-        let headerItem = NSMenuItem(title: "🧠 Cloe AI Assistant", action: nil, keyEquivalent: "")
+        let headerItem = NSMenuItem(title: "Cloe AI Assistant", action: nil, keyEquivalent: "")
         headerItem.isEnabled = false
         menu.addItem(headerItem)
 
@@ -217,12 +229,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let completed = tasks.filter { $0.status == .completed }.count
         let pending = tasks.filter { $0.status == .pending || $0.status == .scheduled }.count
 
-        let statsItem = NSMenuItem(title: "📊 Today: \(completed) done, \(pending) pending", action: nil, keyEquivalent: "")
+        let statsItem = NSMenuItem(title: "Today: \(completed) done, \(pending) pending", action: nil, keyEquivalent: "")
         statsItem.isEnabled = false
         menu.addItem(statsItem)
 
         // Learning status
-        let learningItem = NSMenuItem(title: "🧠 Learning from your workflow...", action: nil, keyEquivalent: "")
+        let learningItem = NSMenuItem(title: "Learning from your workflow...", action: nil, keyEquivalent: "")
         learningItem.isEnabled = false
         menu.addItem(learningItem)
 
@@ -286,13 +298,45 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func openActivityLog() {
-        // TODO: Implement activity log window
-        print("Opening activity log...")
+        if activityLogWindow == nil {
+            let activityLogView = ActivityLogView()
+            let hostingView = NSHostingView(rootView: activityLogView)
+
+            activityLogWindow = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 500, height: 600),
+                styleMask: [.titled, .closable, .resizable, .miniaturizable],
+                backing: .buffered,
+                defer: false
+            )
+            activityLogWindow?.title = "Cloe Activity Log"
+            activityLogWindow?.contentView = hostingView
+            activityLogWindow?.center()
+            activityLogWindow?.isReleasedWhenClosed = false
+        }
+
+        activityLogWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     @objc private func showLearned() {
-        // TODO: Show what Cloe has learned
-        print("Showing learned patterns...")
+        if learnedPatternsWindow == nil {
+            let learnedView = LearnedPatternsView()
+            let hostingView = NSHostingView(rootView: learnedView)
+
+            learnedPatternsWindow = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 550, height: 650),
+                styleMask: [.titled, .closable, .resizable, .miniaturizable],
+                backing: .buffered,
+                defer: false
+            )
+            learnedPatternsWindow?.title = "What Cloe Has Learned"
+            learnedPatternsWindow?.contentView = hostingView
+            learnedPatternsWindow?.center()
+            learnedPatternsWindow?.isReleasedWhenClosed = false
+        }
+
+        learnedPatternsWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     @objc private func setNotchPosition(_ sender: NSMenuItem) {
@@ -306,10 +350,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         UserDefaults.standard.set(!currentState, forKey: "autonomousModeEnabled")
 
         if !currentState {
-            print("🌙 Autonomous mode: ENABLED")
+            print("[AUTONOMOUS] Mode: ENABLED")
             print("   Cloe will complete unfinished tasks overnight")
         } else {
-            print("☀️ Autonomous mode: DISABLED")
+            print("[AUTONOMOUS] Mode: DISABLED")
             nightWorker?.stopNightMode()
         }
     }
@@ -345,7 +389,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             title = " Error"
         case .autonomous:
             iconName = "moon.fill"
-            title = " Cloe 🌙"
+            title = " Cloe [Night]"
         }
 
         let image = NSImage(systemSymbolName: iconName, accessibilityDescription: "Cloe")
@@ -368,11 +412,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func showWelcomeFlow() {
         print("""
 
-        👋 Welcome to Cloe!
+        Welcome to Cloe!
 
         Cloe needs a few permissions to work:
-        • Screen Recording - to see what you're working on
-        • Accessibility - to help you navigate and execute tasks
+        - Screen Recording - to see what you're working on
+        - Accessibility - to help you navigate and execute tasks
 
         These permissions are used ONLY on your device.
         Nothing is sent to any server without your action.
@@ -423,6 +467,12 @@ struct SettingsView: View {
                 Label("General", systemImage: "gear")
             }
 
+            // Cloud Sync
+            CloudSettingsView()
+                .tabItem {
+                    Label("Cloud", systemImage: "cloud")
+                }
+
             // API Keys
             Form {
                 Section("AI Provider") {
@@ -443,14 +493,14 @@ struct SettingsView: View {
                     HStack {
                         Text("Screen Recording")
                         Spacer()
-                        Text(PermissionManager.shared.hasScreenRecordingPermission ? "✓ Granted" : "✗ Required")
+                        Text(PermissionManager.shared.hasScreenRecordingPermission ? "OK Granted" : "FAIL Required")
                             .foregroundColor(PermissionManager.shared.hasScreenRecordingPermission ? .green : .red)
                     }
 
                     HStack {
                         Text("Accessibility")
                         Spacer()
-                        Text(PermissionManager.shared.hasAccessibilityPermission ? "✓ Granted" : "✗ Required")
+                        Text(PermissionManager.shared.hasAccessibilityPermission ? "OK Granted" : "FAIL Required")
                             .foregroundColor(PermissionManager.shared.hasAccessibilityPermission ? .green : .red)
                     }
 
@@ -464,6 +514,430 @@ struct SettingsView: View {
                 Label("Permissions", systemImage: "lock.shield")
             }
         }
-        .frame(width: 450, height: 300)
+        .frame(width: 450, height: 350)
+    }
+}
+
+// MARK: - Cloud Settings View
+
+struct CloudSettingsView: View {
+    @State private var isLoggedIn = CloudSync.shared.isLoggedIn
+    @State private var apiToken = ""
+    @State private var dashboardURL = "http://localhost:5173"
+    @State private var syncStatus = "Not connected"
+    @State private var showingTokenInput = false
+
+    var body: some View {
+        Form {
+            Section("Account") {
+                if isLoggedIn {
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                        Text("Connected to Cloe Dashboard")
+                    }
+
+                    Text(syncStatus)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    Button("Disconnect") {
+                        CloudSync.shared.logout()
+                        isLoggedIn = false
+                        syncStatus = "Not connected"
+                    }
+                    .foregroundColor(.red)
+                } else {
+                    HStack {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.orange)
+                        Text("Not connected")
+                    }
+
+                    Text("Connect to sync your data to the web dashboard")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    Button("Open Dashboard to Connect") {
+                        if let url = URL(string: dashboardURL) {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }
+
+                    Divider()
+
+                    Text("After logging in to the dashboard, paste your API token below:")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    SecureField("API Token", text: $apiToken)
+
+                    Button("Connect") {
+                        if !apiToken.isEmpty {
+                            CloudSync.shared.setAuthToken(apiToken)
+                            CloudSync.shared.startSync()
+                            isLoggedIn = true
+                            syncStatus = "Syncing..."
+                            apiToken = ""
+                        }
+                    }
+                    .disabled(apiToken.isEmpty)
+                }
+            }
+
+            Section("Settings") {
+                TextField("Dashboard URL", text: $dashboardURL)
+                    .font(.system(.body, design: .monospaced))
+
+                Text("Default: http://localhost:5173")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding()
+        .onAppear {
+            isLoggedIn = CloudSync.shared.isLoggedIn
+            if isLoggedIn {
+                syncStatus = "Connected and syncing"
+            }
+        }
+    }
+}
+
+// MARK: - Activity Log View
+
+struct ActivityLogView: View {
+    @State private var actions: [LearningEngine.UserAction] = []
+    @State private var selectedFilter: ActionFilter = .all
+
+    enum ActionFilter: String, CaseIterable {
+        case all = "All"
+        case apps = "Apps"
+        case files = "Files"
+        case communication = "Communication"
+    }
+
+    var filteredActions: [LearningEngine.UserAction] {
+        switch selectedFilter {
+        case .all:
+            return actions
+        case .apps:
+            return actions.filter { $0.type == .openApp || $0.type == .switchApp || $0.type == .closeApp }
+        case .files:
+            return actions.filter { $0.type == .openFile || $0.type == .saveFile }
+        case .communication:
+            return actions.filter { $0.type == .sendEmail || $0.type == .openURL }
+        }
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Text("Activity Log")
+                    .font(.headline)
+                Spacer()
+                Text("\(actions.count) actions recorded")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .padding()
+            .background(Color(NSColor.windowBackgroundColor))
+
+            // Filter bar
+            Picker("Filter", selection: $selectedFilter) {
+                ForEach(ActionFilter.allCases, id: \.self) { filter in
+                    Text(filter.rawValue).tag(filter)
+                }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+
+            Divider()
+
+            // Action list
+            if filteredActions.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.system(size: 40))
+                        .foregroundColor(.secondary)
+                    Text("No activity recorded yet")
+                        .font(.headline)
+                    Text("Cloe learns from your actions over time")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                List(filteredActions, id: \.id) { action in
+                    HStack(spacing: 12) {
+                        Image(systemName: iconForAction(action.type))
+                            .font(.system(size: 16))
+                            .foregroundColor(colorForAction(action.type))
+                            .frame(width: 24)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(descriptionForAction(action))
+                                .font(.system(size: 13))
+                            Text(action.app)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+
+                        Spacer()
+
+                        Text(formatTime(action.timestamp))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+        }
+        .onAppear {
+            actions = LearningEngine.shared.getRecentActions()
+        }
+    }
+
+    private func iconForAction(_ type: LearningEngine.UserAction.ActionType) -> String {
+        switch type {
+        case .openApp: return "app.badge.checkmark"
+        case .closeApp: return "xmark.app"
+        case .switchApp: return "arrow.left.arrow.right"
+        case .openFile: return "doc"
+        case .saveFile: return "doc.badge.arrow.up"
+        case .copyText: return "doc.on.doc"
+        case .pasteText: return "doc.on.clipboard"
+        case .sendEmail: return "envelope"
+        case .openURL: return "globe"
+        case .search: return "magnifyingglass"
+        }
+    }
+
+    private func colorForAction(_ type: LearningEngine.UserAction.ActionType) -> Color {
+        switch type {
+        case .openApp, .closeApp, .switchApp: return .blue
+        case .openFile, .saveFile: return .orange
+        case .copyText, .pasteText: return .purple
+        case .sendEmail: return .green
+        case .openURL: return .cyan
+        case .search: return .gray
+        }
+    }
+
+    private func descriptionForAction(_ action: LearningEngine.UserAction) -> String {
+        switch action.type {
+        case .openApp: return "Opened \(action.app)"
+        case .closeApp: return "Closed \(action.app)"
+        case .switchApp: return "Switched to \(action.target ?? action.app)"
+        case .openFile: return "Opened \(action.target ?? "file")"
+        case .saveFile: return "Saved \(action.target ?? "file")"
+        case .copyText: return "Copied text"
+        case .pasteText: return "Pasted text"
+        case .sendEmail: return "Sent email to \(action.target ?? "recipient")"
+        case .openURL: return "Visited \(action.target ?? "URL")"
+        case .search: return "Searched: \(action.value ?? "...")"
+        }
+    }
+
+    private func formatTime(_ date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: date, relativeTo: Date())
+    }
+}
+
+// MARK: - Learned Patterns View
+
+struct LearnedPatternsView: View {
+    @State private var workflows: [LearningEngine.Workflow] = []
+    @State private var contacts: [LearningEngine.Contact] = []
+    @State private var stats: (actions: Int, contacts: Int, workflows: Int, apps: Int) = (0, 0, 0, 0)
+    @State private var selectedTab = 0
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Stats header
+            HStack(spacing: 20) {
+                StatCard(title: "Actions", value: "\(stats.actions)", icon: "bolt.fill", color: .blue)
+                StatCard(title: "Contacts", value: "\(stats.contacts)", icon: "person.2.fill", color: .green)
+                StatCard(title: "Workflows", value: "\(stats.workflows)", icon: "arrow.triangle.branch", color: .orange)
+                StatCard(title: "Apps", value: "\(stats.apps)", icon: "app.fill", color: .purple)
+            }
+            .padding()
+            .background(Color(NSColor.windowBackgroundColor))
+
+            Divider()
+
+            // Tab view
+            Picker("", selection: $selectedTab) {
+                Text("Workflows").tag(0)
+                Text("Contacts").tag(1)
+            }
+            .pickerStyle(.segmented)
+            .padding()
+
+            // Content
+            if selectedTab == 0 {
+                workflowsView
+            } else {
+                contactsView
+            }
+        }
+        .onAppear {
+            loadData()
+        }
+    }
+
+    private var workflowsView: some View {
+        Group {
+            if workflows.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "arrow.triangle.branch")
+                        .font(.system(size: 40))
+                        .foregroundColor(.secondary)
+                    Text("No workflows learned yet")
+                        .font(.headline)
+                    Text("Cloe detects repeated patterns in your work")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                List(workflows) { workflow in
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text(workflow.name)
+                                .font(.headline)
+                            Spacer()
+                            Text("Used \(workflow.frequency)x")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+
+                        HStack(spacing: 4) {
+                            ForEach(Array(workflow.steps.enumerated()), id: \.offset) { index, step in
+                                if index > 0 {
+                                    Image(systemName: "arrow.right")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                Text(step.app)
+                                    .font(.caption)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Color.blue.opacity(0.1))
+                                    .cornerRadius(4)
+                            }
+                        }
+
+                        if !workflow.triggerPatterns.isEmpty {
+                            Text("Triggers: \(workflow.triggerPatterns.joined(separator: ", "))")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+        }
+    }
+
+    private var contactsView: some View {
+        Group {
+            if contacts.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "person.2")
+                        .font(.system(size: 40))
+                        .foregroundColor(.secondary)
+                    Text("No contacts learned yet")
+                        .font(.headline)
+                    Text("Cloe remembers people you communicate with")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                List(contacts) { contact in
+                    HStack(spacing: 12) {
+                        Circle()
+                            .fill(Color.blue.opacity(0.2))
+                            .frame(width: 40, height: 40)
+                            .overlay(
+                                Text(String(contact.name.prefix(1)).uppercased())
+                                    .font(.headline)
+                                    .foregroundColor(.blue)
+                            )
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(contact.name)
+                                .font(.headline)
+
+                            if let email = contact.email {
+                                Text(email)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+
+                            if let relationship = contact.relationship {
+                                Text(relationship)
+                                    .font(.caption)
+                                    .foregroundColor(.orange)
+                            }
+                        }
+
+                        Spacer()
+
+                        if let lastContact = contact.lastContact {
+                            VStack(alignment: .trailing) {
+                                Text("Last contact")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                                Text(formatDate(lastContact))
+                                    .font(.caption)
+                            }
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+        }
+    }
+
+    private func loadData() {
+        workflows = LearningEngine.shared.getLearnedWorkflows()
+        contacts = LearningEngine.shared.getLearnedContacts()
+        stats = LearningEngine.shared.getStatistics()
+    }
+
+    private func formatDate(_ date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: date, relativeTo: Date())
+    }
+}
+
+struct StatCard: View {
+    let title: String
+    let value: String
+    let icon: String
+    let color: Color
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.system(size: 18))
+                .foregroundColor(color)
+            Text(value)
+                .font(.system(size: 20, weight: .bold))
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .background(color.opacity(0.1))
+        .cornerRadius(8)
     }
 }

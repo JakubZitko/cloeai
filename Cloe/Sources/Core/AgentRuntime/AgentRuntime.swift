@@ -52,7 +52,7 @@ class AgentRuntime {
     func initialize() {
         guard !isInitialized else { return }
 
-        print("🤖 Agent Runtime initializing...")
+        print("[AGENT] Runtime initializing...")
 
         // Load API keys from config
         loadConfiguration()
@@ -62,13 +62,13 @@ class AgentRuntime {
         taskScheduler.start()
 
         isInitialized = true
-        print("✅ Agent Runtime ready")
+        print("[AGENT] Runtime ready")
     }
 
     // MARK: - Command Processing
 
     func processCommand(_ command: String, context: ScreenContext) async throws -> AgentCommandResponse {
-        print("🧠 Processing command: \(command)")
+        print("[AGENT] Processing command: \(command)")
 
         // 1. Parse and understand command
         let intent = try await parseIntent(command, context: context)
@@ -88,12 +88,12 @@ class AgentRuntime {
     }
 
     func executeAction(_ action: ExecutableAction) async {
-        print("⚡ Executing action: \(action.title)")
+        print("[ACTION] Executing: \(action.title)")
 
         do {
             // Get the tool
             guard let tool = toolRegistry.getTool(named: action.tool) else {
-                print("❌ Tool not found: \(action.tool)")
+                print("[ERROR] Tool not found: \(action.tool)")
                 return
             }
 
@@ -107,9 +107,9 @@ class AgentRuntime {
                 result: result
             )
 
-            print("✅ Action completed: \(action.title)")
+            print("[OK] Action completed: \(action.title)")
         } catch {
-            print("❌ Action failed: \(error)")
+            print("[ERROR] Action failed: \(error)")
         }
     }
 
@@ -218,7 +218,7 @@ class AgentRuntime {
         toolRegistry.register(WebSearchTool())
         toolRegistry.register(ScreenCaptureTool())
 
-        print("🔧 Registered \(toolRegistry.toolCount) tools")
+        print("[TOOLS] Registered \(toolRegistry.toolCount) tools")
     }
 
     // MARK: - Utilities
@@ -230,23 +230,107 @@ class AgentRuntime {
     }
 
     private func parseIntentFromResponse(_ response: String) throws -> Intent {
-        // TODO: Parse JSON response into Intent struct
-        // For now, return a mock intent
+        // Extract JSON from response (handle markdown code blocks)
+        let jsonString = extractJSON(from: response)
+
+        guard let data = jsonString.data(using: .utf8) else {
+            throw AgentError.invalidResponse("Failed to encode response")
+        }
+
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw AgentError.invalidResponse("Failed to parse JSON from response")
+        }
+
+        // Parse intent type
+        let intentTypeString = json["intent_type"] as? String ?? "general_query"
+        let intentType = Intent.IntentType(rawValue: intentTypeString) ?? .generalQuery
+
+        // Parse entities
+        let entities = json["entities"] as? [String: Any] ?? [:]
+
+        // Parse confidence
+        let confidence = json["confidence"] as? Double ?? 0.5
+
         return Intent(
-            type: .generalQuery,
-            entities: [:],
-            confidence: 0.8
+            type: intentType,
+            entities: entities,
+            confidence: confidence
         )
     }
 
     private func parseExecutionPlanFromResponse(_ response: String) throws -> ExecutionPlan {
-        // TODO: Parse JSON response into ExecutionPlan
-        // For now, return a mock plan
+        // Extract JSON from response (handle markdown code blocks)
+        let jsonString = extractJSON(from: response)
+
+        guard let data = jsonString.data(using: .utf8) else {
+            throw AgentError.invalidResponse("Failed to encode response")
+        }
+
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw AgentError.invalidResponse("Failed to parse JSON from response")
+        }
+
+        // Parse response message
+        let responseMessage = json["response_message"] as? String ?? "I'll help you with that."
+
+        // Parse requires confirmation
+        let requiresConfirmation = json["requires_confirmation"] as? Bool ?? false
+
+        // Parse actions
+        var actions: [ExecutableAction] = []
+        if let actionsArray = json["actions"] as? [[String: Any]] {
+            for actionDict in actionsArray {
+                let title = actionDict["title"] as? String ?? "Action"
+                let tool = actionDict["tool"] as? String ?? ""
+                let parameters = actionDict["parameters"] as? [String: Any] ?? [:]
+                let icon = actionDict["icon"] as? String ?? "bolt"
+                let needsConfirm = actionDict["requires_confirmation"] as? Bool ?? false
+
+                let action = ExecutableAction(
+                    title: title,
+                    icon: icon,
+                    requiresConfirmation: needsConfirm,
+                    tool: tool,
+                    parameters: parameters
+                )
+                actions.append(action)
+            }
+        }
+
         return ExecutionPlan(
-            responseMessage: "I'll help you with that.",
-            actions: [],
-            requiresConfirmation: false
+            responseMessage: responseMessage,
+            actions: actions,
+            requiresConfirmation: requiresConfirmation
         )
+    }
+
+    private func extractJSON(from response: String) -> String {
+        // Try to find JSON in markdown code block
+        if let codeBlockRange = response.range(of: "```json"),
+           let endRange = response.range(of: "```", range: codeBlockRange.upperBound..<response.endIndex) {
+            let jsonStart = codeBlockRange.upperBound
+            let jsonEnd = endRange.lowerBound
+            return String(response[jsonStart..<jsonEnd]).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        // Try to find JSON in plain code block
+        if let codeBlockRange = response.range(of: "```"),
+           let endRange = response.range(of: "```", range: codeBlockRange.upperBound..<response.endIndex) {
+            let jsonStart = codeBlockRange.upperBound
+            let jsonEnd = endRange.lowerBound
+            let content = String(response[jsonStart..<jsonEnd]).trimmingCharacters(in: .whitespacesAndNewlines)
+            if content.hasPrefix("{") {
+                return content
+            }
+        }
+
+        // Try to find raw JSON object
+        if let startIndex = response.firstIndex(of: "{"),
+           let endIndex = response.lastIndex(of: "}") {
+            return String(response[startIndex...endIndex])
+        }
+
+        return response
     }
 }
 
@@ -277,4 +361,25 @@ struct MemoryEntry {
     let description: String
     let timestamp: Date
     let relevance: Double
+}
+
+// MARK: - Agent Errors
+
+enum AgentError: Error {
+    case invalidResponse(String)
+    case toolNotFound(String)
+    case executionFailed(String)
+}
+
+extension AgentError: LocalizedError {
+    var errorDescription: String? {
+        switch self {
+        case .invalidResponse(let message):
+            return "Invalid response: \(message)"
+        case .toolNotFound(let name):
+            return "Tool not found: \(name)"
+        case .executionFailed(let message):
+            return "Execution failed: \(message)"
+        }
+    }
 }

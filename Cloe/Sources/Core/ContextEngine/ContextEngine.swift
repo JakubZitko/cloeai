@@ -51,7 +51,7 @@ class ContextEngine {
     func startMonitoring() {
         guard !isMonitoring else { return }
 
-        print("👁️ Context monitoring started")
+        print("[EYE] Context monitoring started")
         isMonitoring = true
 
         monitoringTimer = Timer.scheduledTimer(
@@ -68,7 +68,7 @@ class ContextEngine {
     func stopMonitoring() {
         guard isMonitoring else { return }
 
-        print("🛑 Context monitoring stopped")
+        print("[STOP] Context monitoring stopped")
         isMonitoring = false
 
         monitoringTimer?.invalidate()
@@ -96,11 +96,11 @@ class ContextEngine {
                         // Notify subscribers
                         self.contextSubject.send(context)
 
-                        print("📍 Context updated: \(context.appName) - \(context.windowTitle)")
+                        print("[PIN] Context updated: \(context.appName) - \(context.windowTitle)")
                     }
                 }
             } catch {
-                print("❌ Context capture error: \(error)")
+                print("[ERROR] Context capture error: \(error)")
             }
         }
     }

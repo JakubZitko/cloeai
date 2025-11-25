@@ -50,9 +50,9 @@ class HotKeyMonitor {
 
         if status == noErr {
             hotKeys[hotKeyID] = handler
-            print("✅ Registered hotkey with ID: \(hotKeyID)")
+            print("[OK] Registered hotkey with ID: \(hotKeyID)")
         } else {
-            print("❌ Failed to register hotkey: \(status)")
+            print("[ERROR] Failed to register hotkey: \(status)")
         }
     }
 
